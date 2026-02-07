@@ -1,4 +1,3 @@
-
 # Attendance-Management
 
 This is a Face Recognition-based Attendance System built using OpenCV and Python. The system uses a pre-trained Haar Cascade Classifier for face detection and LBPH (Local Binary Patterns Histograms) for face recognition. It allows real-time attendance marking for up to 50 students per session and stores the attendance records in a CSV file. The project includes a GUI developed using Tkinter, making it easy for users to select subjects and monitor attendance.
