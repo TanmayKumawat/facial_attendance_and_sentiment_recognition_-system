@@ -45,11 +45,27 @@ def subjectChoose(text_to_speech):
                 recognizer.read(trainimagelabel_path)
                 facecasCade = cv2.CascadeClassifier(haarcasecade_path)
                 df = pd.read_csv(studentdetail_path)
+                # tanmay edit ->
                 cam = cv2.VideoCapture(0)
+                # 🔧 Replace webcam (0) with your phone camera stream
+# Make sure IP Webcam app is running on your phone and both phone & PC are on same Wi-Fi
+               # 📱 Using phone camera via USB (IP Webcam + ADB port forwarding)
+                #ip_url = "http://192.168.1.35:8080/video"  # Localhost after ADB forwarding
+                #cam = cv2.VideoCapture(ip_url)
+
+                #if not cam.isOpened():
+                 #   print("❌ Unable to access camera feed! Check ADB connection or IP Webcam app.")
+                  #  text_to_speech("Unable to access camera feed! Please check ADB connection or IP Webcam app.")
+                   # return
+
+
                 font = cv2.FONT_HERSHEY_SIMPLEX
                 col_names = ["Enrollment", "Name"]
                 attendance = pd.DataFrame(columns=col_names)
                 
+                print(f"Loaded {len(df)} students from CSV.")
+                print(df.head())
+
                 while True:
                     ret, im = cam.read()
                     if not ret:
@@ -58,22 +74,34 @@ def subjectChoose(text_to_speech):
                     
                     gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
                     faces = facecasCade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
-                    print(f"Faces detected: {len(faces)}")
                     
                     for (x, y, w, h) in faces:
                         Id, conf = recognizer.predict(gray[y:y + h, x:x + w])
-                        print(f"Confidence: {conf}")
-                        if conf < 80:
-                            aa = df.loc[df["Enrollment"] == Id]["Name"].values
-                            tt = f"{Id}-{aa}"
-                            attendance.loc[len(attendance)] = [Id, aa]
-                            cv2.rectangle(im, (x, y), (x + w, y + h), (0, 255, 0), 4)
-                            cv2.putText(im, str(tt), (x + h, y), font, 1, (255, 255, 0), 4)
-                        else:
+                        print(f"==> Detected Face. ID: {Id}, Confidence: {conf}")
+                        
+                        # Normalize ID type for lookup
+                        match_found = False
+                        
+                        if conf < 100: # Increased threshold to 100 to see if it catches more (lower is better for LBPH, but sometimes 80 is too strict for bad lighting)
+                            matches = df.loc[df["Enrollment"].astype(str) == str(Id)]
+                            
+                            if not matches.empty:
+                                aa = matches["Name"].values[0]
+                                tt = f"{Id}-{aa}"
+                                attendance.loc[len(attendance)] = [Id, aa]
+                                cv2.rectangle(im, (x, y), (x + w, y + h), (0, 255, 0), 4)
+                                cv2.putText(im, str(tt), (x + h, y), font, 1, (255, 255, 0), 4)
+                                match_found = True
+                                print(f"    Match Found: {tt}")
+                            else:
+                                print(f"    ID {Id} predicted, but NOT FOUND in CSV enrollment list.")
+
+                        if not match_found:
                             Id = "Unknown"
                             tt = str(Id)
                             cv2.rectangle(im, (x, y), (x + w, y + h), (0, 25, 255), 7)
                             cv2.putText(im, str(tt), (x + h, y), font, 1, (0, 25, 255), 4)
+                            print("    Marked as Unknown")
                     
                     if time.time() > future:
                         break

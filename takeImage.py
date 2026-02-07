@@ -19,7 +19,10 @@ def TakeImage(l1, l2, haarcasecade_path, trainimage_path, message, err_screen, t
         text_to_speech(t)
     else:
         try:
+            # edit->
             cam = cv2.VideoCapture(0)
+            # cam = cv2.VideoCapture("http://192.168.1.5:8080/video")
+
             detector = cv2.CascadeClassifier(haarcasecade_path)
             Enrollment = l1
             Name = l2
